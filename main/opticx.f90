@@ -1,37 +1,43 @@
 program main_program
-  use constants
+  use constants_math
+  use parser_input_file
   use parser_wannier90_tb
-  use parser_xatu_ex
+  use parser_optics_xatu_dim
   use ome
+  !use sigma_first
+
   implicit none
-
-  integer :: j
-  character(len=100) :: material_name_in
- 
   
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !read input file for optical calculations
+  call get_input_file()
+  !pause
 
-  !Reading input file
-  open(10,file='./bin/input.in')
-  read(10,*)
-  ! Read the first word (or line) from the file into the variable material_name_in
-  !read(10,*) j
-  !material_name_in=trim(material_name_in)
-  ! Close the file
-  read(10,*) material_name_in
-  close(10)
-  
-  !get wannier90 info
+  !get TB model from the wannier90 file
   call wannier90_get(material_name_in)
-  !get xatu files
-  call get_exciton_dim()
-  call get_exciton_data()
-  !evaluate optical matrix elements
+  !pause
+  
+  !get grid, number of bands and exciton quantities: 
+  !either by reading from xatu-output or opticx-input
+  call get_optics_xatu_dim()
+  
+  !evaluate single particle optical matrix elements: only VME by now
   call get_ome()
 
-  write(*,*) 'It seems that we are ok'
+  !evaluate linear conductivity tensor
+  !call get_sigma_first()
+
+  !evaluate second-order conductivity tensor
+  !call get_sigma_second()
+
+  !evaluate and print requested optical responses
+  !call get_optical_response()
+  
+  write(*,*) 'It seems that we are ok hehe'
   pause
+
   !write(*,*) R(1,1)
-  pause
+
 
 
 end program main_program

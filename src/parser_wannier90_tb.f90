@@ -1,27 +1,25 @@
 module parser_wannier90_tb
   implicit none
-  
+  private
+  public :: norb,nR,n1,n2,n3,nRvec
+  public :: R,shop,hhop,rhop_c
+  public :: material_name
+  public :: wannier90_get
+
   integer norb
   integer nR
   integer n1,n2,n3
   integer nRvec
+
+  real(8) R,shop
+  complex(16) hhop,rhop_c
+  character(100) material_name
 
   dimension R(3,3)
   allocatable nRvec(:,:)
   allocatable hhop(:,:,:)
   allocatable rhop_c(:,:,:,:)
   allocatable shop(:,:,:)
-
-  real(8) R,shop
-  complex(16) hhop,rhop_c
-  character(100) material_name
-  
- 
-
-
-
-
-
 
   contains
   
@@ -35,8 +33,8 @@ module parser_wannier90_tb
 
     real(8) a1,a2,a3,a4,a5,a6
 
-    material_name = material_name_in
-
+    material_name = material_name_in !quick fix. "_in" variable is deprecated
+                                     !and should be removed in the future
     !open the w90 file 
     open(10,file='./wannier90_files_input/'//trim(material_name)//'_tb.dat')
     read(10,*) !first line is blank
@@ -93,11 +91,15 @@ module parser_wannier90_tb
       end do
     end do
     close(10)
- 
+    
+    !get orthogonal overlap: this variable is a reminiscent
+    !of the interface with the original crystal interface.
+    !I maintain the overlap matrix though
 	  shop=0.0d0  
 	  do ialpha=1,norb
 	    shop(1,ialpha,ialpha)=1.0d0
 	  end do
+    
 
 	  write(*,*) 'wannier hamiltonian has been read'  
     !convert units: to Hartree and bohrs
@@ -107,6 +109,7 @@ module parser_wannier90_tb
 
   end subroutine wannier90_get
   
+
   !subroutine get_a(value)
     !real, intent(out) :: value
     !value = a

@@ -19,18 +19,21 @@ OBJ_MAIN = $(BINDIR)/opticx.o
 # Executable
 TARGET = $(BINDIR)/opticx
 
+# Libraries
+LIBS = -lopenblas -fopenmp -lgfortran
+
 # Default target to build the executable
 all: $(TARGET)
 # Remove the opticx.o after linking
-	rm -f $(OBJ_MAIN)
+	rm -f $(OBJ_MAIN) 
 
 # Rule for creating the executable
 $(TARGET): $(OBJ_MODULES) $(OBJ_MAIN)
-	$(FC) $(OBJ_MODULES) $(OBJ_MAIN) -o $(TARGET)
+	$(FC) $(OBJ_MODULES) $(OBJ_MAIN) -o $(TARGET) $(LIBS)
 
 # Rule for compiling module files (*.f90) into object files (*.o)
 $(BUILDDIR)/%.o: $(SRCDIR)/%.f90
-	$(FC) $(FFLAGS) -c $< -o $@
+	$(FC) $(FFLAGS) -c $< -o $@ $(LIBS)
 
 # Rule for compiling the main program file (opticx.f90) into opticx.o in bin folder
 $(BINDIR)/opticx.o: $(SRC_MAIN)

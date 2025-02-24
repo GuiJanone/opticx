@@ -1,0 +1,17 @@
+# Periodic dimensions
+2
+# Wannier90_filename
+MoS2_spin_wannier_07032024_102x102_22_exchange
+# Xatu_interface
+false
+# Bloch_info
+21
+# Nfermi
+22
+22
+# Response
+absorption
+# Energy_range
+2 3.5
+
+
