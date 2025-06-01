@@ -35,10 +35,20 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.f90
 
 # Dependencies between modules:
 # Assume `sigma_first.f90` uses `constants_math.mod` and `parser_input_file.mod`
-# These lines ensure that sigma_first.o is compiled after constants_math.o and parser_input_file.o
+# These lines ensure that sigma_first.o is compiled after constants_math.o and parser_input_file.o, etc.
 
+$(BUILDDIR)/parser_wannier90_tb.o: $(BUILDDIR)/parser_input_file.o 
+$(BUILDDIR)/ome_sp.o: $(BUILDDIR)/constants_math.o 
+$(BUILDDIR)/ome_sp.o: $(BUILDDIR)/parser_wannier90_tb.o
+$(BUILDDIR)/ome_sp.o: $(BUILDDIR)/parser_optics_xatu_dim.o  
 $(BUILDDIR)/sigma_first.o: $(BUILDDIR)/constants_math.o 
-$(BUILDDIR)/sigma_first.o: $(BUILDDIR)/parser_input_file.o $(BUILDDIR)/parser_optics_xatu_dim.o $(BUILDDIR)/ome.o 
+$(BUILDDIR)/sigma_first.o: $(BUILDDIR)/parser_input_file.o
+$(BUILDDIR)/sigma_first.o: $(BUILDDIR)/parser_optics_xatu_dim.o 
+$(BUILDDIR)/sigma_first.o: $(BUILDDIR)/ome.o 
+$(BUILDDIR)/sigma_second.o: $(BUILDDIR)/constants_math.o 
+$(BUILDDIR)/sigma_second.o: $(BUILDDIR)/parser_input_file.o
+$(BUILDDIR)/sigma_second.o: $(BUILDDIR)/parser_optics_xatu_dim.o 
+$(BUILDDIR)/sigma_second.o: $(BUILDDIR)/ome.o 
 # Add more dependencies as needed for other modules
 # For example:
 # $(BUILDDIR)/some_other_module.o: $(BUILDDIR)/dependency_module.o

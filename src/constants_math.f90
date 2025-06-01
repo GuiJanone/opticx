@@ -7,7 +7,22 @@ module constants_math
   !private :: ax,ay,az,bx,by,bz,cx,cy,cz
   !public :: ax,ay,az,bx,by,bz,cx,cy,cz
   contains
-  
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine percentage_index(kacum,ktotal,kmoment)
+    implicit none
+    integer :: kacum,ktotal,kmoment
+    integer :: npercentage,nrest
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    npercentage=int(dble(kacum)/dble(ktotal)*100.0d0)
+    nrest=mod(npercentage,10)
+    !write(*,*) 'Percentage of k-points read:',npercentage,' %'
+    if (nrest.eq.0) then
+      if (kmoment.ne.npercentage) then
+        write(*,*) '   Percentage of loop:',npercentage,' %'
+      end if
+      kmoment=npercentage
+    end if   
+  end subroutine percentage_index
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine crossproduct(ax,ay,az,bx,by,bz,cx,cy,cz)
     implicit none
