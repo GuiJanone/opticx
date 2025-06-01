@@ -1,0 +1,18 @@
+# Periodic dimensions
+2
+# Wannier90_filename
+GeS_wannier_04062024
+# Xatu_interface
+false
+# Bandlist
+-1 0 1 2
+# Ncells
+102
+# Nfermi
+20
+# OME_sp
+nonlinear
+# Response
+shift_shiftvector
+# Energy_variables
+1 9 0.025 400

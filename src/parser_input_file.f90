@@ -1,27 +1,39 @@
 module parser_input_file
   implicit none
   private
-  public :: material_name_in,filename_input, &
-  iflag_xatu_text,response_text
+  public :: material_name_in
+  public :: filename_input
+  public :: iflag_xatu_text
+  public :: iflag_ome_sp_text
+  public :: iflag_ome_ex_text
+  public :: response_text
   public :: iflag_xatu
+  public :: iflag_ome_sp
+  public :: iflag_ome_ex
   public :: ndim,nf,npointstotal_sq
   public :: e1,e2,eta,nw
   public :: get_input_file
   public :: nband_index
+  public :: norb_ex_cut
   public :: read_line_numbers_int !subroutine
 
   character(len=100) :: material_name_in
   character(len=100) :: filename_input
   character(len=100) :: iflag_xatu_text
+  character(len=100) :: iflag_ome_sp_text
+  character(len=100) :: iflag_ome_ex_text
   character(len=100) :: response_text
 
   logical :: iflag_xatu
-  
+  logical :: iflag_ome_sp
+  logical :: iflag_ome_ex
+
   integer :: nk1
   integer :: ndim
   integer :: nf
   integer :: npointstotal_sq
   integer :: nband_index_aux 
+  integer :: norb_ex_cut
   integer :: j !to read stuff
   integer :: nband_index
   integer :: nw
@@ -35,9 +47,14 @@ module parser_input_file
       implicit none
       allocatable :: narray(:) 
       integer :: i,narray,num_values
+      
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      write(*,*) '1. Entering parser_input_file'
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       call get_command_argument(1, filename_input)
-      open(10,file='./bin/'//trim(filename_input)//'')
+      !open(10,file='./bin/'//trim(filename_input)//'')
+      open(10,file=trim(filename_input))
       read(10,*) !# Periodic dimensions
       read(10,*) ndim
       read(10,*) !# Wannier90_filename
@@ -47,8 +64,14 @@ module parser_input_file
       if (iflag_xatu_text == 'true') then
         iflag_xatu= .true.
         npointstotal_sq=0
+        read(10,*) !# Exciton_cutoff
+        read(10,*) norb_ex_cut
         read(10,*) !# Nfermi
         read(10,*) nf
+        read(10,*) !# OME_sp
+        read(10,*) iflag_ome_sp_text
+        read(10,*) !# OME_ex
+        read(10,*) iflag_ome_ex_text    
         read(10,*) !# Response
         read(10,*) response_text
         read(10,*) !# Energy_variables
@@ -56,14 +79,16 @@ module parser_input_file
         close(10)
       else if (iflag_xatu_text  == 'false') then
         iflag_xatu= .false.
-        read(10,*) !# Nfermi
-        read(10,*) nf
         read(10,*) !# Bandlist
         !reads a line of numbers and stores them in an allocatable array 'narray'
         call read_line_numbers_int(narray,num_values) 
         !write(*,*) (narray(j),j=1,num_values)
         read(10,*) !# Ncells
         read(10,*) npointstotal_sq
+        read(10,*) !# Nfermi
+        read(10,*) nf
+        read(10,*) !# OME_sp
+        read(10,*) iflag_ome_sp_text
         read(10,*) !# Response
         read(10,*) response_text
         read(10,*) !# Energy_variables
@@ -77,7 +102,20 @@ module parser_input_file
         write(*,*) 'Error: Invalid value in the input file. Expected "true" or "false".'
         stop
       end if
-    
+      
+      !declare flags from text strings
+      if (iflag_ome_sp_text == 'true') then
+        iflag_ome_sp= .true.
+      else
+        iflag_ome_sp= .false.
+      end if
+      if (iflag_ome_ex_text == 'true') then
+        iflag_ome_ex= .true.
+      else
+        iflag_ome_ex= .false.
+      end if
+      
+      write(*,*) '   Input file has been read'
     end subroutine get_input_file
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !This routine reads a line of numbers into an array
