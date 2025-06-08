@@ -16,7 +16,8 @@ module parser_wannier90_tb
   complex*16 hhop,rhop_c
   character(100) material_name
 
-  dimension R(3,3)
+  dimension   R(3,3)
+  integer, allocatable :: Degen(:)
   allocatable nRvec(:,:)
   allocatable hhop(:,:,:)
   allocatable rhop_c(:,:,:,:)
@@ -32,9 +33,12 @@ module parser_wannier90_tb
     integer ialpha,ialphap
     integer iR
     integer nRzero
-    integer nalloc,nallocate,nskip
+    integer nalloc,nallocate
+    integer :: fp, i, j
     allocatable nallocate(:)
     real(8) a1,a2,a3,a4,a5,a6
+    character(len=200) :: line
+    integer :: ios
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     write(*,*) '2. Entering parser_wannier90_tb'
@@ -42,51 +46,54 @@ module parser_wannier90_tb
     material_name = material_name_in !quick fix. "_in" variable is deprecated
                                      !and should be removed in the future
     !open the w90 file 
-    open(10,file='../wannier90_files_input/'//trim(material_name)//'_tb.dat')
-    read(10,*) nskip
-    read(10,*) R(1,1),R(1,2),R(1,3)
-    read(10,*) R(2,1),R(2,2),R(2,3)
-    read(10,*) R(3,1),R(3,2),R(3,3)
-    read(10,*) norb
-    read(10,*) nR
-    close(10)
+    open(action='read',file='../wannier90_files_input/'//trim(material_name)//'_tb.dat', newunit=fp)
+    read(fp,*) 
+    read(fp,*) R(1,1),R(1,2),R(1,3)
+    read(fp,*) R(2,1),R(2,2),R(2,3)
+    read(fp,*) R(3,1),R(3,2),R(3,3)
+    read(fp,*) norb
+    read(fp,*) nR
+    
     !allocate nR, h-,r-, and s-hoppings
     allocate (nRvec(nR,3))
     allocate (hhop(nR,norb,norb))
     allocate (shop(nR,norb,norb))
     allocate (rhop_c(3,nR,norb,norb))
+    allocate (Degen(nR))
 
-    !get where the hoppings start
-    open(10,file='../wannier90_files_input/'//trim(material_name)//'_tb.dat')
-    do iskip=1,nskip
-      read(10,*)
-    end do   
+    ! Read degeneracies
+    if ((nR / 15) > 1) then
+        do i = 1, (nR / 15)
+            read(fp, *) Degen((i - 1) * 15 + 1:(i - 1) * 15 + 15)
+        end do
+    end if
+    read(fp, *) Degen((i - 1) * 15 + 1:(i - 1) * 15 + MOD(nR, 15))
+
     !get the hopping matrices
     do iR=1,nR
-      read(10,*) nRvec(iR,1),nRvec(iR,2),nRvec(iR,3)
+      read(fp,*) nRvec(iR,:)
       do ialphap=1,norb
 	      do ialpha=1,norb
-		      read(10,*) nkk1,nkk2,a1,a2
-			    hhop(iR,ialpha,ialphap)=complex(a1,a2)
-		    end do	  
+          read(fp,*) nkk1,nkk2,a1,a2
+          hhop(iR,ialpha,ialphap)=complex(a1,a2)
+		    end do  
 	    end do
-      read(10,*)
+      read(fp,*)
     end do
     
     !get rhoppings
    	do iR=1,nR
-      read(10,*) !nRvec is already strored
+      read(fp,*) !nRvec is already strored
 	    do ialphap=1,norb
 	      do ialpha=1,norb
-		      read(10,*) nkk1,nkk2,a1,a2,a3,a4,a5,a6
+          read(fp,*) nkk1,nkk2,a1,a2,a3,a4,a5,a6
           rhop_c(1,iR,ialpha,ialphap)=complex(a1,a2)
-			    rhop_c(2,iR,ialpha,ialphap)=complex(a3,a4)
-			    rhop_c(3,iR,ialpha,ialphap)=complex(a5,a6)
+          rhop_c(2,iR,ialpha,ialphap)=complex(a3,a4)
+          rhop_c(3,iR,ialpha,ialphap)=complex(a5,a6)
 			  end do
       end do
-      if (iR /= nR) read(10,*) !blank line
+      if (iR /= nR) read(fp,*) !blank line
     end do
-    close(10)
     
     !get orthogonal overlap: this variable is a reminiscent
     !of the interface with the original crystal interface.
@@ -100,15 +107,15 @@ module parser_wannier90_tb
       end if
     end do
     !wannier functions are orthonormal
-	  shop=0.0d0  
-	  do ialpha=1,norb
-	    shop(nRzero,ialpha,ialpha)=1.0d0
-	  end do 
-    !convert units: to Hartree and bohrs
-	  hhop=hhop/27.211385d0
-	  rhop_c=rhop_c/0.52917721067121d0
-		R=R/0.52917721067121d0
-	  write(*,*) '   Wannier hamiltonian has been read' 
+     shop=0.0d0  
+     do ialpha=1,norb
+       shop(nRzero,ialpha,ialpha)=1.0d0
+     end do 
+     !convert units: to Hartree and bohrs
+     hhop=hhop/27.211385d0
+     rhop_c=rhop_c/0.52917721067121d0
+     R=R/0.52917721067121d0
+     write(*,*) '   Wannier hamiltonian has been read' 
   end subroutine wannier90_get
   
 
