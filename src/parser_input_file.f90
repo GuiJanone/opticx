@@ -58,7 +58,7 @@ module parser_input_file
       read(10,*) !# Periodic dimensions
       read(10,*) ndim
       read(10,*) !# Wannier90_filename
-      read(10,*) material_name_in
+      read(10,'(A)') material_name_in
       read(10,*) !# Xatu_interface
       read(10,*) iflag_xatu_text
       if (iflag_xatu_text == 'true') then
