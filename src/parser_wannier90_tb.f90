@@ -14,7 +14,7 @@ module parser_wannier90_tb
 
   real(8) R,shop
   complex*16 hhop,rhop_c
-  character(100) material_name
+  character(1000) material_name
 
   dimension   R(3,3)
   integer, allocatable :: Degen(:)
@@ -52,7 +52,7 @@ subroutine wannier90_get(material_name_in)
   write(*,*) '2. Entering parser_wannier90_tb'
 
   ! === 1.  Use the path exactly as supplied ========================
-  write(*,*) "MATERIAL NAME PARSED:", material_name_in
+  !write(*,*) "MATERIAL NAME PARSED:", material_name_in
   file2open = trim(material_name_in)
 
   ! === 2.  Derive clean material name (no dir, no _tb.dat) =========

@@ -17,7 +17,7 @@ module parser_input_file
   public :: norb_ex_cut
   public :: read_line_numbers_int !subroutine
 
-  character(len=100) :: material_name_in
+  character(len=1000) :: material_name_in
   character(len=100) :: filename_input
   character(len=100) :: iflag_xatu_text
   character(len=100) :: iflag_ome_sp_text
