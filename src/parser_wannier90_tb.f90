@@ -52,7 +52,7 @@ subroutine wannier90_get(material_name_in)
   write(*,*) '2. Entering parser_wannier90_tb'
 
   ! === 1.  Use the path exactly as supplied ========================
-  write(*,*) "MATERIAL NAME PARSED:", material_name_in
+  ! write(*,*) "MATERIAL NAME PARSED:", material_name_in
   file2open = trim(material_name_in)
 
   ! === 2.  Derive clean material name (no dir, no _tb.dat) =========
@@ -86,13 +86,18 @@ subroutine wannier90_get(material_name_in)
     allocate (rhop_c(3,nR,norb,norb))
     allocate (Degen(nR))
 
-    ! Read degeneracies
-    if ((nR / 15) > 1) then
+    ! degen read, 15 elements by line
+    if ((nR / 15) .gt. 1) then
         do i = 1, (nR / 15)
-            read(fp, *) Degen((i - 1) * 15 + 1:(i - 1) * 15 + 15)
-        end do
+            read(fp, *) Degen((i - 1)*15 + 1:(i - 1)*15 + 15) 
+        enddo
     end if
-    read(fp, *) Degen((i - 1) * 15 + 1:(i - 1) * 15 + MOD(nR, 15))
+    
+    ! Read the last partial line only if needed
+    if (MOD(nR, 15) .ne. 0) then
+        read(fp, *) Degen((nR - MOD(nR, 15) + 1):nR)
+    endif 
+    read(fp, *)
 
     !get the hopping matrices
     do iR=1,nR
