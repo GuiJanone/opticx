@@ -20,9 +20,8 @@ module bands
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	  	  
 	  npointstotal_path=200
 	  !npointstotal_path=200
-    npaths=3 !hBn, hexagonal
+    npaths=2 !hBn, hexagonal
     !npaths=2         !GeS, square
-
     allocate (rkxvector_path(npointstotal_path))
     allocate (rkyvector_path(npointstotal_path))
     allocate (rkzvector_path(npointstotal_path))
@@ -31,6 +30,15 @@ module bands
     allocate (b2(npaths+1))
   	b1(npaths+1)=0.0d0
     b2(npaths+1)=0.0d0
+
+    !Default path: from 0.5*\bold{G}_1 to 0.5*\bold{G}_2
+    b1(1)=0.5d0
+    b2(1)=0.0d0
+    b1(2)=0.0d0
+    b2(2)=0.0d0
+    b1(3)=0.0d0
+    b2(3)=0.5d0
+
     !introduce path manually for now
 		!hBN_Pedersen, hexagonal BZ
     !b1(1)=0.0d0
@@ -51,19 +59,10 @@ module bands
     !b1(4)=0.0d0
     !b2(4)=0.0d0 	
 
-    !GeS - Square lattices: X-Gamma-Y
-    b1(1)=0.5d0
-    b2(1)=0.0d0
-    b1(2)=0.0d0
-    b2(2)=0.0d0
-    b1(3)=0.0d0
-    b2(3)=0.5d0
-
     !get reciprocal space paths  
     call get_path(npointstotal_path,npaths)
     call get_eigenenergies(npointstotal_path)
-    write(*,*) 'heyaaa'
-    pause
+    !pause
 	end subroutine get_energy_bands
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine get_path(npointstotal_path,npaths)
@@ -128,7 +127,7 @@ module bands
 	  
     open(10,file='bands_'//trim(material_name)//'.dat')	   	  
 	  do ibz=1,npointstotal_path
-      write(*,*) 'point:',ibz,npointstotal_path        
+      !write(*,*) 'point:',ibz,npointstotal_path        
       rkx=rkxvector_path(ibz)
 		  rky=rkyvector_path(ibz)
       rkz=rkzvector_path(ibz)
@@ -152,8 +151,12 @@ module bands
           skernel(ialphap,ialpha)=conjg(skernel(ialpha,ialphap))    
         end do
 	    end do 
-		  call diagoz(norb,e,hkernel)   
-	    write(10,*) rkx,rky,rkz,rklengthvector_path(ibz),(e(j)*27.211385d0,j=1,norb)	
+		  call diagoz(norb,e,hkernel)  
+
+	    write(10,*) rkx,rky,rkz,rklengthvector_path(ibz),(e(j)*27.211385d0,j=1,norb)
+      !if (rkx.eq.0.0d0 .and. rky.eq.0.0d0) then
+        !write(*,*) 'eigenenergies:',e(60)*27.211385d0,e(61)*27.211385d0,(e(61)-e(60))*27.211385d0
+      !end if
 	  end do
     close(10)
 

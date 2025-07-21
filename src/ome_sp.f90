@@ -12,11 +12,13 @@ module ome_sp
   allocatable ek(:,:)
   allocatable gen_der_ex_band(:,:,:,:,:)
   allocatable shift_vector_ex_band(:,:,:,:,:)
+  allocatable berry_eigen_ex_band(:,:,:,:)
 
   real*8 ek
   real*8 shift_vector_ex_band
   complex*16 vme_ex_band
   complex*16 gen_der_ex_band
+  complex*16 berry_eigen_ex_band
   contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine get_ome_sp(iflag_norder)
@@ -27,27 +29,27 @@ module ome_sp
     integer i,j,ii,jj,nj
     integer naux1
 
-    dimension skernel(norb,norb)
-    dimension hkernel(norb,norb)
-    dimension sderkernel(3,norb,norb)
-    dimension hderkernel(3,norb,norb)
-    dimension akernel(3,norb,norb)
+    allocatable :: skernel(:,:)
+    allocatable :: hkernel(:,:)
+    allocatable :: sderkernel(:,:,:)
+    allocatable :: hderkernel(:,:,:)
+    allocatable :: akernel(:,:,:)
 
-    dimension e(norb)
-    dimension ecomplex(norb)
-    dimension hk_ev(norb,norb)
-    dimension vme(3,norb,norb)
+    allocatable :: e(:)
+    allocatable :: ecomplex(:)
+    allocatable :: hk_ev(:,:)
+    allocatable :: vme(:,:,:)
 
-	  dimension abc(3,norb,norb)
-    dimension gd1(3,3,norb,norb)
-	  dimension gd2(3,3,norb,norb)
-	  dimension gd3(3,3,norb,norb)
-    dimension gen_der(3,3,norb,norb)
-    dimension vme_der(3,3,norb,norb)
-	  dimension shift_vector(3,3,norb,norb)
-    dimension berry_eigen1(3,norb,norb)
-    dimension berry_eigen2(3,norb,norb)
-    dimension berry_eigen(3,norb,norb)
+    allocatable :: abc(:,:,:)
+    allocatable :: gd1(:,:,:,:)
+    allocatable :: gd2(:,:,:,:)
+    allocatable :: gd3(:,:,:,:)
+    allocatable :: gen_der(:,:,:,:)
+    allocatable :: vme_der(:,:,:,:)  
+    allocatable :: shift_vector(:,:,:,:)
+    allocatable :: berry_eigen1(:,:,:)
+    allocatable :: berry_eigen2(:,:,:)
+    allocatable :: berry_eigen(:,:,:)
 
     real(8) rkx,rky,rkz
     real(8) :: e
@@ -65,40 +67,86 @@ module ome_sp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
     write(*,*) '5. Entering ome_sp'
     !allocate to save k-dependent vme and energies between involved band
-    allocate (vme_ex_band(npointstotal,3,nband_ex,nband_ex))
-    allocate (ek(npointstotal,nband_ex))
+    allocate(vme_ex_band(npointstotal,3,nband_ex,nband_ex))
+    allocate(ek(npointstotal,nband_ex))
+    allocate(berry_eigen_ex_band(npointstotal,3,nband_ex,nband_ex))
+    allocate(gen_der_ex_band(npointstotal,3,3,nband_ex,nband_ex))
+    allocate(shift_vector_ex_band(npointstotal,3,3,nband_ex,nband_ex))
+    gen_der_ex_band=0.0d0
+    shift_vector_ex_band=0.0d0
+    berry_eigen_ex_band=0.0d0
     vme_ex_band=0.0d0
     ek=0.0d0
-    
-    if (iflag_norder.eq.2) then
-      allocate (gen_der_ex_band(npointstotal,3,3,nband_ex,nband_ex))
-      allocate (shift_vector_ex_band(npointstotal,3,3,nband_ex,nband_ex))
-      gen_der_ex_band=0.0d0
-      shift_vector_ex_band=0.0d0
-    end if
+
+
+    allocate(skernel(norb,norb))
+    allocate(hkernel(norb,norb))
+    allocate(sderkernel(3,norb,norb))
+    allocate(hderkernel(3,norb,norb))
+    allocate(akernel(3,norb,norb))
+
+    allocate(e(norb))
+    allocate(ecomplex(norb))
+    allocate(hk_ev(norb,norb))
+    allocate(vme(3,norb,norb))
+
+	  allocate(abc(3,norb,norb))
+    allocate(gd1(3,3,norb,norb))
+    allocate(gd2(3,3,norb,norb))
+    allocate(gd3(3,3,norb,norb))
+    allocate(gen_der(3,3,norb,norb))  
+    allocate(vme_der(3,3,norb,norb))
+    allocate(shift_vector(3,3,norb,norb))
+    allocate(berry_eigen1(3,norb,norb))
+    allocate(berry_eigen2(3,norb,norb))
+    allocate(berry_eigen(3,norb,norb))
+  
+    !if (iflag_norder.eq.2) then
+      !allocate (gen_der_ex_band(npointstotal,3,3,nband_ex,nband_ex))
+      !allocate (shift_vector_ex_band(npointstotal,3,3,nband_ex,nband_ex))
+      !gen_der_ex_band=0.0d0
+      !shift_vector_ex_band=0.0d0
+    !end if
     !open(50,file='coefs_new.dat')  
     !Brillouin zone sampling - parallelization
-   
+    
+    !write
+  !only:material_name,nR,nRvec,norb,R,shop,hhop,rhop_c
+  !use parser_optics_xatu_dim, &
+  !only:npointstotal,rkxvector,rkyvector,rkzvector, &
+       !nband_ex,nband_index,nv_ex,nc_ex
+    !write(*,*) material_name
+    !write(*,*) nR
+    !do i=1,nR
+      !write(*,*) nRvec(i,1),nRvec(i,2),nRvec(i,3)
+    !end do
+    !do i=1,npointstotal
+      !write(*,*) rkxvector(i),rkyvector(i),rkzvector(i)
+    !end do
+    !pause
 
     write(*,*) '   Calculating optical matrix elements (sp): sampling BZ...'
     ibz_sum=0 !counter for the number of k points in the BZ
-    !pause
-
+    
+    !initializing variables
     !$OMP PARALLEL DO PRIVATE(rkx,rky,rkz), &
     !$OMP PRIVATE(hkernel,skernel,sderkernel,hderkernel,akernel), & 
     !$OMP PRIVATE(hk_ev,e,vme), & 
     !$OMP PRIVATE(abc,gen_der,gd1,gd2,gd3), & 
 	  !$OMP PRIVATE(vme_der,shift_vector,berry_eigen1,berry_eigen2,berry_eigen)
     do ibz=1,npointstotal 
-      
-      !$OMP CRITICAL   
-      ibz_sum=ibz_sum+1
-      call percentage_index(ibz_sum,npointstotal,naux1)
-      !$OMP END CRITICAL
-      !write(*,*) '   Optical matrix elements (sp): k-point',ibz,'/',npointstotal
+      !!$OMP CRITICAL   
+      !ibz_sum=ibz_sum+1
+      !call percentage_index(ibz_sum,npointstotal,naux1)
+      !!$OMP END CRITICAL
+      write(*,*) '   Optical matrix elements (sp): k-point',ibz,'/',npointstotal
+      !pause
       rkx=rkxvector(ibz)
 		  rky=rkyvector(ibz)
-      rkz=rkzvector(ibz)		
+      rkz=rkzvector(ibz)	
+
+      !pause
+
       !get matrices in the \alpha, \alpha' basis (orbitals,k)    		
       call get_vme_kernels_ome(rkx,rky,rkz,norb,skernel,sderkernel, &
            hkernel,hderkernel,akernel)
@@ -131,6 +179,11 @@ module ome_sp
               gen_der_ex_band(ibz,nj,1,i,j)=gen_der(nj,1,ii,jj)
 			        gen_der_ex_band(ibz,nj,2,i,j)=gen_der(nj,2,ii,jj)
 			        gen_der_ex_band(ibz,nj,3,i,j)=gen_der(nj,3,ii,jj)
+
+			        berry_eigen_ex_band(ibz,nj,i,j)=berry_eigen(nj,ii,jj)
+			        berry_eigen_ex_band(ibz,nj,i,j)=berry_eigen(nj,ii,jj)
+			        berry_eigen_ex_band(ibz,nj,i,j)=berry_eigen(nj,ii,jj)
+
             end if
 
           end do
@@ -148,7 +201,8 @@ module ome_sp
       call write_ome_sp_linear(iflag_norder,npointstotal,nband_ex,vme_ex_band,ek)
 	  end if
     if (iflag_norder.eq.2) then
-      call write_ome_sp_nonlinear(iflag_norder,npointstotal,nband_ex,vme_ex_band,ek,gen_der_ex_band,shift_vector_ex_band)
+      call write_ome_sp_nonlinear(iflag_norder,npointstotal,nband_ex,vme_ex_band,ek, &
+                                  gen_der_ex_band,shift_vector_ex_band,berry_eigen_ex_band)
     end if
     write(*,*) '   Optical matrix elements (sp) have been written in file'
     !pause
@@ -443,7 +497,7 @@ module ome_sp
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine write_ome_sp_nonlinear(iflag_norder,npointstotal,nband_ex,vme_ex_band,ek,gen_der_ex_band, &
-  shift_vector_ex_band)
+  shift_vector_ex_band,berry_eigen_ex_band)
     implicit none
     integer iflag_norder
     integer npointstotal,nband_ex

@@ -1,7 +1,7 @@
 # Periodic dimensions
 2
 # Wannier90_filename
-GeS_wannier_04062024
+/mnt/c/Users/juanj/OneDrive - UAM/Physics/codes/developing/opticx_live/opticx/wannier90_files_input/GeS_wannier_04062024_tb.dat
 # Xatu_interface
 false
 # Bandlist
@@ -11,8 +11,8 @@ false
 # Nfermi
 20
 # OME_sp
-linear
+nonlinear
 # Response
-absorbance
+shift_shiftvector
 # Energy_variables
 1 9 0.025 400

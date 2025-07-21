@@ -25,7 +25,7 @@ module ome
     end if
     if (iflag_ome_sp_text == 'none' ) then
       write(*,*) '   Optical matrix elements (sp) will be read from file'   
-    end if
+    end if 
     !excitonic matrix elements
     if (iflag_ome_ex_text == 'linear') then
       iflag_norder=1

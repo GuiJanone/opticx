@@ -119,7 +119,7 @@ subroutine wannier90_get(material_name_in)
       end do
       if (iR /= nR) read(fp,*) !blank line
     end do
-    
+  close(fp)
     !get orthogonal overlap: this variable is a reminiscent
     !of the interface with the original crystal interface.
     !I maintain the overlap matrix though
@@ -132,15 +132,29 @@ subroutine wannier90_get(material_name_in)
       end if
     end do
     !wannier functions are orthonormal
-     shop=0.0d0  
-     do ialpha=1,norb
-       shop(nRzero,ialpha,ialpha)=1.0d0
-     end do 
-     !convert units: to Hartree and bohrs
-     hhop=hhop/27.211385d0
-     rhop_c=rhop_c/0.52917721067121d0
-     R=R/0.52917721067121d0
-     write(*,*) '   Wannier hamiltonian has been read' 
+    shop=0.0d0  
+    do ialpha=1,norb
+      shop(nRzero,ialpha,ialpha)=1.0d0
+    end do
+    
+
+    !APPLY BIAS BY HAND
+    !do iR=1,nR
+      !do ialpha=1,norb
+        !do ialphap=1,norb
+          !hhop(iR,ialpha,ialphap)=hhop(iR,ialpha,ialphap)-0.02d0*rhop_c(3,iR,ialpha,ialphap)
+        !end do
+      !end do
+    !end do
+    !do ialpha=1,norb
+      !hhop(nRzero,ialpha,ialpha)=hhop(nRzero,ialpha,ialpha)-0.1d0*rhop_c(3,nRzero,ialpha,ialpha)
+    !end do
+     
+    !convert units: to Hartree and bohrs
+    hhop=hhop/27.211385d0
+    rhop_c=rhop_c/0.52917721067121d0
+    R=R/0.52917721067121d0
+    write(*,*) '   Wannier hamiltonian has been read' 
   end subroutine wannier90_get
 
   

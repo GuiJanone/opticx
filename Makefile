@@ -1,8 +1,8 @@
 # -----------------------------------------------------------------
 # opticx Makefile
 # -----------------------------------------------------------------
-# Author    : J. J. Esteve-Paredes
-# Modified  : D. Hernangómez-Pérez
+# Author    : J. J. Esteve-Paredes (JJEP)
+# Modified  : D. Hernangómez-Pérez (DH)
 # Version   : 1.1
 # Date      : 20.06.2025
 # -----------------------------------------------------------------
@@ -11,7 +11,9 @@
 # Compiler and flags
 # -----------------------------------------------------------------
 FC     = gfortran
-FFLAGS = -O2
+FFLAGS = -O2 
+#FFLAGS = -g -fcheck=all -Wall -O0
+#FFLAGS = -O2
 
 # -----------------------------------------------------------------
 # Optional: use MKL  
@@ -82,8 +84,21 @@ $(BINDIR)/opticx.o: $(SRC_MAIN) | $(BINDIR) $(BUILDDIR)
 # -----------------------------------------------------------------
 # Module dependencies
 # -----------------------------------------------------------------
+# DH: Add more dependencies as needed for other modules
+#     $(BUILDDIR)/some_other_module.o: \
+# 	  $(BUILDDIR)/dependency_module.o
 
-$(BUILDDIR)/parser_wannier90_tb.o: $(BUILDDIR)/parser_input_file.o 
+$(BUILDDIR)/parser_wannier90_tb.o: \
+	$(BUILDDIR)/parser_input_file.o 
+
+$(BUILDDIR)/parser_optics_xatu_dim.o: \
+	$(BUILDDIR)/constants_math.o \
+	$(BUILDDIR)/parser_wannier90_tb.o \
+	$(BUILDDIR)/parser_input_file.o 
+
+$(BUILDDIR)/exciton_envelopes.o: \
+    $(BUILDDIR)/constants_math.o \
+	$(BUILDDIR)/parser_optics_xatu_dim.o
 
 $(BUILDDIR)/bands.o: \
 	$(BUILDDIR)/constants_math.o \
@@ -95,28 +110,43 @@ $(BUILDDIR)/ome_sp.o: \
 	$(BUILDDIR)/parser_wannier90_tb.o \
 	$(BUILDDIR)/parser_optics_xatu_dim.o  
 
-$(BUILDDIR)/ome.o: $(BUILDDIR)/ome_sp.o #DH
+$(BUILDDIR)/ome_ex.o: \
+	$(BUILDDIR)/constants_math.o \
+	$(BUILDDIR)/parser_wannier90_tb.o \
+	$(BUILDDIR)/parser_optics_xatu_dim.o \
+	$(BUILDDIR)/exciton_envelopes.o 
+
+$(BUILDDIR)/ome.o: \
+    $(BUILDDIR)/parser_input_file.o \
+	$(BUILDDIR)/ome_sp.o \
+	$(BUILDDIR)/ome_ex.o
 
 $(BUILDDIR)/optical_response.o: \
-	$(BUILDDIR)/sigma_first.o \
-	$(BUILDDIR)/sigma_second.o
+	$(BUILDDIR)/parser_input_file.o \
+	$(BUILDDIR)/sigma_first_sp.o \
+	$(BUILDDIR)/sigma_first_ex.o \
+	$(BUILDDIR)/sigma_second_sp.o \
+	$(BUILDDIR)/sigma_second_ex.o
 
-$(BUILDDIR)/sigma_first.o: \
+$(BUILDDIR)/sigma_first_sp.o: \
 	$(BUILDDIR)/constants_math.o \
 	$(BUILDDIR)/parser_input_file.o \
 	$(BUILDDIR)/parser_optics_xatu_dim.o \
 	$(BUILDDIR)/ome.o 
 
-$(BUILDDIR)/sigma_second.o: \
+$(BUILDDIR)/sigma_first_ex.o: \
+	$(BUILDDIR)/constants_math.o 
+
+$(BUILDDIR)/sigma_second_sp.o: \
 	$(BUILDDIR)/constants_math.o \
 	$(BUILDDIR)/parser_input_file.o \
 	$(BUILDDIR)/parser_optics_xatu_dim.o \
 	$(BUILDDIR)/ome.o 
 
-# Add more dependencies as needed for other modules
-# $(BUILDDIR)/some_other_module.o: \
-# 	$(BUILDDIR)/dependency_module.o
-
+$(BUILDDIR)/sigma_second_ex.o: \
+	$(BUILDDIR)/constants_math.o \
+    $(BUILDDIR)/ome_ex.o \
+	$(BUILDDIR)/sigma_second_sp.o 
 # -----------------------------------------------------------------
 # Clean
 # -----------------------------------------------------------------

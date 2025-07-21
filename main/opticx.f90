@@ -4,10 +4,17 @@ program opticx
   use parser_input_file
   use parser_wannier90_tb
   use parser_optics_xatu_dim
+  use exciton_envelopes
   use bands
+  use ome_sp
+  use ome_ex
   use ome
   use optical_response
-  use sigma_first
+  use sigma_first_sp
+  use sigma_first_ex
+  use sigma_second_sp
+  use sigma_second_ex
+
   
   implicit none
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -19,7 +26,8 @@ program opticx
   !either by reading from xatu-output or opticx-input
   call get_optics_xatu_dim()
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !call get_energy_bands()
+  call get_energy_bands()
+  !pause
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !evaluate single particle optical matrix elements: only VME by now
   call get_ome()

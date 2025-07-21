@@ -1,7 +1,9 @@
-module sigma_second
+module sigma_second_sp
   use constants_math
   use parser_input_file, &
   only:nf,e1,e2,eta,nw,response_text
+  use parser_wannier90_tb, &
+  only:material_name
   use parser_optics_xatu_dim, &
   only:npointstotal,vcell, &
   norb_ex_cut,nv_ex,nc_ex,nband_ex,e_ex,fk_ex, &
@@ -13,7 +15,7 @@ module sigma_second
 
   contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine get_sigma_second(nwp,nwq)
+  subroutine get_sigma_second_sp(nwp,nwq)
     implicit none 
     !in/out
     integer :: nwp,nwq
@@ -41,14 +43,16 @@ module sigma_second
     complex*16 gen_der_ex_band   
     complex*16 sigma_w_sp 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    write(*,*) '8. Entering sigma_second'
+    write(*,*) '10. Entering sigma_second_sp'
+
     !read matrix elements from file
     call read_ome_sp_nonlinear(iflag_norder,npointstotal,nband_ex,berry_eigen_ex_band, &
                                    gen_der_ex_band,shift_vector_ex_band,vme_ex_band,ek)
-    write(*,*) '   Optical matrix elements (sp) have been read from file'
+    write(*,*) '    Optical matrix elements (sp) have been read from file'
+    
     !compute shift conductivity
     if (nwp.eq.1 .and. nwq.eq.(-1)) then
-      call get_sigma_shift(npointstotal,nband_ex,berry_eigen_ex_band, &
+      call get_sigma_shift_sp(npointstotal,nband_ex,berry_eigen_ex_band, &
                         gen_der_ex_band,shift_vector_ex_band,vme_ex_band,ek)
       !write(*,*) 'The optical response',response_text,'has been evaluated'
     end if
@@ -60,9 +64,9 @@ module sigma_second
     end if
 
 
-  end subroutine get_sigma_second
+  end subroutine get_sigma_second_sp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
-  subroutine get_sigma_shift(npointstotal,nband_ex,berry_eigen_ex_band, &
+  subroutine get_sigma_shift_sp(npointstotal,nband_ex,berry_eigen_ex_band, &
                         gen_der_ex_band,shift_vector_ex_band,vme_ex_band,ek)
     implicit none
     !in/out
@@ -91,7 +95,6 @@ module sigma_second
     dimension shift_vector_w(3,3,nw)
     dimension wp(nw)
     dimension sigma_w_sp(3,3,3,nw)
-    dimension sigma_w_ex(3,3,3,nw)
 
     real*8 :: e_nband
     complex*16 :: vme_nband
@@ -99,14 +102,13 @@ module sigma_second
     complex*16 :: gen_der_nband
     complex*16 :: vme_der_nband
     real*8 :: shift_vector_w
-    real*8 :: wp
+    real*8 :: wp,eta2
     complex*16 :: sigma_w_sp
-    complex*16 :: sigma_w_ex
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
     
     !initialize conductivity arrays
-    call initialize_sigma_second_arrays(nw,wp,sigma_w_sp,sigma_w_ex)
-    write(*,*) '   Evaluating shift conductivity...'
+    call initialize_sigma_second_arrays(nw,wp,eta2,sigma_w_sp)
+    write(*,*) '    Evaluating shift conductivity (sp)...'
     !k-sampling and filliing frequency arrays
     do ibz=1,npointstotal
       !write(*,*) 'point:',ibz,npointstotal       
@@ -131,49 +133,22 @@ module sigma_second
 	    if (idegg.eq.1) then
         continue
 		  end if
-      call get_shift_intens(nband_ex,nw,e_nband,vme_nband,shift_vector_nband,gen_der_nband,vme_der_nband, &
-           shift_vector_w,wp,sigma_w_sp)
+      call get_shift_intens_sp(nband_ex,nw,e_nband,vme_nband,shift_vector_nband,gen_der_nband,vme_der_nband, &
+           shift_vector_w,wp,eta2,sigma_w_sp)
 	  end do
     
     !get excitonic frequency tensor
     !write(*,*) 'broadening excitons peaks...'
-    call get_shift_intens_ex()	
     !print conductivity tensor
     !write(*,*) 'Printing sigma first...'
-    call print_sigma_second(nw,wp,sigma_w_sp,shift_vector_w,sigma_w_ex)
-  end subroutine get_sigma_shift
-
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
-  subroutine initialize_sigma_second_arrays(nw,wp,sigma_w_sp,sigma_w_ex)
-  implicit none
-  
-  integer :: nw
-  integer :: i
-
-  dimension :: wp(nw)
-  dimension :: sigma_w_sp(3,3,3,nw)
-  dimension :: sigma_w_ex(3,3,3,nw)
-
-  real(8) :: wrange,wp
-  complex(8) :: sigma_w_sp,sigma_w_ex
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  wp=0.0d0
-  sigma_w_sp=0.0d0
-  sigma_w_ex=0.0d0
-  wrange=e2-e1
-  do i=1,nw
-    wp(i)=(e1+wrange/dble(nw)*dble(i-1))/27.211385d0
-  end do  
-  eta=eta/27.211385d0 !change units to hartree units
-
-  
-  end subroutine initialize_sigma_second_arrays
+    call print_sigma_second_sp(nw,wp,sigma_w_sp,shift_vector_w)
+    write(*,*) '    Shift conductivity (sp) has been printed'
+  end subroutine get_sigma_shift_sp
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine get_shift_intens(nband_ex,nw,e_nband,vme_nband,shift_vector_nband,gen_der_nband,vme_der_nband, &
-             shift_vector_w,wp,sigma_w_sp)
+  subroutine get_shift_intens_sp(nband_ex,nw,e_nband,vme_nband,shift_vector_nband,gen_der_nband,vme_der_nband, &
+             shift_vector_w,wp,eta2,sigma_w_sp)
     implicit none
   
     !in/out
@@ -196,16 +171,15 @@ module sigma_second
     complex*16 :: gen_der_nband
     complex*16 :: vme_der_nband
     real*8 :: shift_vector_w
-    real*8 :: wp
+    real*8 :: wp,eta2
     complex*16 :: sigma_w_sp
 
     !here
     integer :: iw,nj,njp,njpp,nn,nnp,i
     dimension :: abc(3,nband_ex,nband_ex)
     
-    real*8 :: fnn,fnnp,delta_nnp
+    real*8 :: factor1,fnn,fnnp,delta_nnp
     complex*16 abc
-    complex*16 factor1
     complex*16 shift1,shift2,shift
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
@@ -226,7 +200,7 @@ module sigma_second
           end if   
   	      factor1=fnn-fnnp			
           !delta_nnp=1.0d0/pi*aimag(1.0d0/(wp(iw)-e(nn)+e(nnp)-complex(0.0d0,eta)))			    
-          delta_nnp=1.0d0/eta*1.0d0/sqrt(2.0d0*pi)*exp(-0.5d0/(eta**2)*(wp(iw)-e_nband(nn)+e_nband(nnp))**2)
+          delta_nnp=1.0d0/eta2*1.0d0/sqrt(2.0d0*pi)*exp(-0.5d0/(eta2**2)*(wp(iw)-e_nband(nn)+e_nband(nnp))**2)
   	      do nj=1,3
   	        do njp=1,3		
   		        shift_vector_w(nj,njp,iw)=shift_vector_w(nj,njp,iw)+ &
@@ -265,27 +239,47 @@ module sigma_second
         end do  
       end do
     end do
-  end subroutine get_shift_intens
+  end subroutine get_shift_intens_sp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-  subroutine get_shift_intens_ex()
-      implicit none
-  end subroutine get_shift_intens_ex
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-  subroutine get_sigma_shg(npointstotal,nband_ex)
+  subroutine get_sigma_shg_sp(npointstotal,nband_ex)
     implicit none
     !in/out
     integer :: nband_ex,npointstotal
     !here
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-  end subroutine get_sigma_shg
-end module sigma_second
+  end subroutine get_sigma_shg_sp
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
+  subroutine initialize_sigma_second_arrays(nw,wp,eta2,sigma_w)
+    implicit none
+  
+    integer :: nw
+    integer :: i
+
+    dimension :: wp(nw)
+    dimension :: sigma_w(3,3,3,nw)
+
+    real(8) :: wrange,wp,eta2
+    complex(8) :: sigma_w
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    wp=0.0d0
+    sigma_w=0.0d0
+    wrange=e2-e1
+    do i=1,nw
+      wp(i)=(e1+wrange/dble(nw)*dble(i-1))/27.211385d0
+    end do  
+    eta2=eta/27.211385d0 !change units to hartree units
+
+  
+  end subroutine initialize_sigma_second_arrays
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine print_sigma_second(nw,wp,sigma_w_sp,shift_vector_w,sigma_w_ex)
-    use parser_wannier90_tb, &
-    only:material_name 
+  subroutine print_sigma_second_sp(nw,wp,sigma_w_sp,shift_vector_w)
     implicit none
  
     !in/out
@@ -294,18 +288,16 @@ end module sigma_second
     dimension :: wp(nw)
     dimension :: sigma_w_sp(3,3,3,nw)
     dimension :: shift_vector_w(3,3,nw)
-    dimension :: sigma_w_ex(3,3,3,nw) 
     
     real*8 :: wp
     complex*16 :: sigma_w_sp
     real*8 :: shift_vector_w
-    complex*16 :: sigma_w_ex
     
     !here
     real*8 :: feps
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
     !write frequency dependent conductivity	  
-    open(90,file='shift_shiftvector_'//trim(material_name)//'.dat')
+    open(90,file='shift_sp_shiftvector_'//trim(material_name)//'.dat')
     open(100,file='shift_vector.dat')
     do iw=1,nw
       !feps=-6.623618d-03/(27.21138**2)*1.0d06 !%go from au to (\mu A /V^2)*Angstrongs
@@ -323,4 +315,6 @@ end module sigma_second
     close(90)
     close(95)
     close(100)
-  end subroutine print_sigma_second
+  end subroutine print_sigma_second_sp
+end module sigma_second_sp
+

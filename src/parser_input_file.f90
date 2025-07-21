@@ -3,6 +3,8 @@ module parser_input_file
   private
   public :: material_name_in
   public :: filename_input
+  public :: xatu_eigval_filepath_in
+  public :: xatu_states_filepath_in
   public :: iflag_xatu_text
   public :: iflag_ome_sp_text
   public :: iflag_ome_ex_text
@@ -22,6 +24,8 @@ module parser_input_file
   character(len=100) :: iflag_xatu_text
   character(len=100) :: iflag_ome_sp_text
   character(len=100) :: iflag_ome_ex_text
+  character(len=1000) :: xatu_eigval_filepath_in
+  character(len=1000) :: xatu_states_filepath_in
   character(len=100) :: response_text
 
   logical :: iflag_xatu
@@ -51,10 +55,12 @@ module parser_input_file
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       write(*,*) '1. Entering parser_input_file'
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      call get_command_argument(1, filename_input)
+      
+      call get_command_argument(1,filename_input)
+      !write(*,*) trim(filename_input)
+      !pause
       !open(10,file='./bin/'//trim(filename_input)//'')
-      open(10,file=trim(filename_input))
+      open(10,file=adjustl(filename_input))
       read(10,*) !# Periodic dimensions
       read(10,*) ndim
       read(10,*) !# Wannier90_filename
@@ -63,6 +69,9 @@ module parser_input_file
       read(10,*) iflag_xatu_text
       if (iflag_xatu_text == 'true') then
         iflag_xatu= .true.
+        !get paths for .eigval and .states files
+        read(10,'(A)') xatu_eigval_filepath_in
+        read(10,'(A)') xatu_states_filepath_in
         npointstotal_sq=0
         read(10,*) !# Exciton_cutoff
         read(10,*) norb_ex_cut

@@ -1,0 +1,22 @@
+# Periodic dimensions
+2
+# Wannier90_filename
+/mnt/c/Users/juanj/OneDrive - UAM/Physics/codes/developing/opticx_live/opticx/wannier90_files_input/hBN_Pedersen_Zhang_120x120_11_tb.dat
+# Xatu_interface
+true
+/mnt/c/Users/juanj/OneDrive - UAM/Physics/codes/developing/opticx_live/opticx/xatu_files_input/hBN_Pedersen_Zhang_120x120_11.eigval
+/mnt/c/Users/juanj/OneDrive - UAM/Physics/codes/developing/opticx_live/opticx/xatu_files_input/hBN_Pedersen_Zhang_120x120_11.states
+# Exciton_cutoff
+100
+# Nfermi
+1
+# OME_sp
+linear
+# OME_ex
+linear
+# Response
+absorbance
+# Energy_variables
+4.5 12 0.1 400
+
+

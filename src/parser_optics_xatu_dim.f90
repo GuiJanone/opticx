@@ -3,8 +3,9 @@ module parser_optics_xatu_dim
   use parser_wannier90_tb, &
   only:material_name,R !variables
   use parser_input_file, &
-  only:ndim,npointstotal_sq, &
-       iflag_xatu,nf,nband_index,norb_ex_cut, & !variables
+  only:xatu_eigval_filepath_in,xatu_states_filepath_in, & !filepaths
+       ndim,npointstotal_sq, & !variables
+       iflag_xatu,nf,nband_index,norb_ex_cut, & 
        read_line_numbers_int !subroutine
   implicit none
 
@@ -158,13 +159,87 @@ module parser_optics_xatu_dim
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	  subroutine get_exciton_dim()
       implicit none
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!		  
-      open(10,file='../xatu_files_input/'//trim(material_name)//'.eigval')
+      !allocatable :: file2open(:)
+      !character :: file2open 
+      dimension nband_index_aux1(100)
+      dimension nband_index_aux2(100)
 
+
+      integer :: nband_ex_aux !number of valence bands
+      integer :: nband_index_aux1,nband_index_aux2 !auxiliary
+      integer :: nband_ex_aux1,nband_ex_aux2 !auxiliary
+      integer :: iexit
+      integer :: i,j,naux,npointstotal_sq
+      
+      real(8) aux1
+      character(len=:), allocatable :: file2open
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!		  
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !UPDATE: 2025-07-09. It is no longer necessary to modify .eigval file to read bandlist
+      !This part gets 'nband_ex' and 'nband_index(nband_ex)'
+      !Note: nband_ex_aux is used as nband_ex, which will be defined later (historic reasons)
+      !      but we should have nband_ex=nband_ex_aux 
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !save number of valence bands
+      file2open=trim(xatu_states_filepath_in)
+      open(10,file=file2open)
+      read(10,*) 
+      do i=1,50 !we will never use more than 50 bands...
+        read(10,*) aux1,aux1,aux1,nband_index_aux1(i) 
+        if (i.gt.1) then
+          do j=1,i-1
+            if (nband_index_aux1(i).eq.nband_index_aux1(j)) then
+              nband_ex_aux1=i-1 !save number of valence bands
+              goto 128
+            end if
+          end do
+        end if
+      end do
+128   continue
+      close(10)	 
+      !write(*,*) '   Number of valence bands:',nband_ex1
+      !save number of conduction bands
+      open(10,file=file2open)
+      read(10,*) 
+      do i=1,50 !we will never use more than 50 bands...
+        read(10,*) aux1,aux1,aux1,naux,nband_index_aux2(i) 
+        !skip similar values
+        if (nband_ex_aux1.gt.1) then
+          do j=1,nband_ex_aux1-1
+            read(10,*)
+          end do
+        end if
+        if (i.gt.1) then
+          do j=1,i-1
+            if (nband_index_aux2(i).eq.nband_index_aux2(j)) then
+              nband_ex_aux2=(i-1) !save number of valence bands
+              goto 129
+            end if
+          end do
+        end if
+      end do
+129   continue
+      close(10)	 
+      !write(*,*) '   Number of total bands:',nband_ex_aux1,nband_ex_aux2
+      nband_ex_aux=nband_ex_aux1+nband_ex_aux2
+      allocate(nband_index(nband_ex_aux))
+      do i=1,nband_ex_aux1
+        nband_index(i)=nband_index_aux1(i)-nf+1
+      end do
+      do i=nband_ex_aux1+1,nband_ex_aux
+        nband_index(i)=nband_index_aux2(i-nband_ex_aux1)-nf+1
+      end do
+      !old, previous lines replace this call
       !reads a line of numbers and stores them in an allocatable array 'narray'
-      !the .eigval file has been modified so in includes the list of bands as a first line
-      call read_line_numbers_int(nband_index,nband_ex) 
-      !write(*,*) (nband_index(j), j=1,nband_ex)
+      !call read_line_numbers_int(nband_index,nband_ex) 
+      !write(*,*) nband_ex_aux
+      !write(*,*) (nband_index(j), j=1,nband_ex_aux)
+      !pause   
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !get nk
+      file2open=trim(xatu_eigval_filepath_in)
+      open(10,file=file2open)
       read(10,*) npointstotal_sq
 	    read(10,*) naux 
       close(10)	  
@@ -202,19 +277,21 @@ module parser_optics_xatu_dim
     subroutine get_exciton_data()
 	    implicit none
       integer j,nkaka
-      integer ib,ibz,jind  
+      integer ib,ibz,ibz_sum,jind  
 	    real(8) auxr1
 
 	    dimension auxr1(2*norb_ex)
+      character(len=:), allocatable :: file2open
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!		  
 	    !get energies
-	    open(10,file='../xatu_files_input/'//trim(material_name)//'.eigval')
-	    read(10,*) 
+      file2open=trim(xatu_eigval_filepath_in)
+      open(10,file=file2open) 
 	    read(10,*)
 	    read(10,*) nkaka,(e_ex(j), j=1,norb_ex_cut)
       close(10)
-
-	    open(10,file='../xatu_files_input/'//trim(material_name)//'.states')	  	  
+      
+      file2open=trim(xatu_states_filepath_in)
+	    open(10,file=file2open)	  	  
 	    read(10,*) 
 
 	    !reading k-mesh
@@ -226,12 +303,15 @@ module parser_optics_xatu_dim
 	    end do
 
 	    !reading exciton-wf  
+      ibz_sum=0 !counter to display percentage
+      write(*,*) '   Reading exciton wavefunctions...'
       do ibz=1,norb_ex_cut
-        
+        ibz_sum=ibz_sum+1
         !display percentaje
         if (abs(dble(ibz)/dble(norb_ex_cut))*100.0d0-100.0d0 .lt. 5.0d0) then
-		      write(*,*) '   Reading exciton wf:',int(abs(dble(ibz)/dble(norb_ex_cut))*100.0d0),'%'
-		      write(*,*) '   Reading exciton wf:',abs(dble(ibz)/dble(norb_ex_cut))*100.0d0,'%'
+          call percentage_index(ibz_sum,norb_ex_cut,nkaka)
+		      !write(*,*) '   Reading exciton wf:',int(abs(dble(ibz)/dble(norb_ex_cut))*100.0d0),'%'
+		      !write(*,*) '   Reading exciton wf:',abs(dble(ibz)/dble(norb_ex_cut))*100.0d0,'%'
         end if
 		    read(10,*) (auxr1(j),j=1,2*norb_ex)
         !write(*,*) (auxr1(j),j=1,2*norb_ex)
