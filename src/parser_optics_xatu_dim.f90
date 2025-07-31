@@ -185,7 +185,7 @@ module parser_optics_xatu_dim
       file2open=trim(xatu_states_filepath_in)
       open(10,file=file2open)
       read(10,*) 
-      do i=1,50 !we will never use more than 50 bands...
+      do i=1,5000 !we will never use more than 50 bands...
         read(10,*) aux1,aux1,aux1,nband_index_aux1(i) 
         if (i.gt.1) then
           do j=1,i-1
@@ -202,7 +202,7 @@ module parser_optics_xatu_dim
       !save number of conduction bands
       open(10,file=file2open)
       read(10,*) 
-      do i=1,50 !we will never use more than 50 bands...
+      do i=1,5000 !we will never use more than 50 bands...
         read(10,*) aux1,aux1,aux1,naux,nband_index_aux2(i) 
         !skip similar values
         if (nband_ex_aux1.gt.1) then
@@ -276,19 +276,44 @@ module parser_optics_xatu_dim
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	
     subroutine get_exciton_data()
 	    implicit none
-      integer j,nkaka
+      integer j,nkaka, max_ex, ios
       integer ib,ibz,ibz_sum,jind  
 	    real(8) auxr1
 
 	    dimension auxr1(2*norb_ex)
       character(len=:), allocatable :: file2open
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!		  
-	    !get energies
-      file2open=trim(xatu_eigval_filepath_in)
-      open(10,file=file2open) 
-	    read(10,*)
-	    read(10,*) nkaka,(e_ex(j), j=1,norb_ex_cut)
-      close(10)
+    ! Read eigenvalues from file
+    file2open = trim(xatu_eigval_filepath_in)
+
+    open(unit=10, file=file2open, status='old', action='read', iostat=ios)
+    if (ios /= 0) then
+      print *, 'Error opening eigenvalue file: ', trim(file2open)
+      stop
+    end if
+
+    ! skipping headers
+    read(10,*) ! npointstotal_sq already read
+    read(10,*) ! naux already read
+    read(10,*) max_ex
+
+    if (norb_ex_cut > max_ex) then
+      norb_ex_cut = max_ex
+      print *, "!!! Exciton cutoff is bigger than available eigvalues in .eigval !!!"
+      print *, " --> Setting cutoff to maximum number of available excitons: ", max_ex
+    end if
+
+    ! read norb_ex_cut values, one per line
+    do j = 1, norb_ex_cut
+      read(10, *, iostat=ios) e_ex(j)
+      if (ios /= 0) then
+        print *, 'Error reading eigenvalue at line', j+1
+        stop
+      end if
+    end do
+
+    close(10)
+
       
       file2open=trim(xatu_states_filepath_in)
 	    open(10,file=file2open)	  	  
